@@ -1,0 +1,18 @@
+[project]
+name = "simple-hj-model"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mediapy>=1.2.4",
+    "mujoco>=3.3.2",
+    "mujoco-mjx>=3.3.2",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "ipython>=9.2.0",
+    "jupyter>=1.1.1",
+]
