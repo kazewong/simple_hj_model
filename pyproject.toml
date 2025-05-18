@@ -10,6 +10,7 @@ dependencies = [
     "mediapy>=1.2.4",
     "mujoco>=3.3.2",
     "mujoco-mjx>=3.3.2",
+    "sympy>=1.14.0",
 ]
 
 [dependency-groups]
