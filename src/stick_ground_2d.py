@@ -1,5 +1,7 @@
 import sympy as sp
 import numpy as np
+import multiprocessing as mp
+import holoviews as hv
 
 # Define variables
 M, m, ux, uy, omega_init, L, theta, mu = sp.symbols("M m ux uy omega_init L theta mu")
@@ -44,10 +46,10 @@ def solve_system(
     uy_value,
     omega_init_value,
     theta_value,
-    mu_value,
-    M_value = 10000000,
-    m_value = 1,
-    L_value = 1,
+    mu_value = 1,
+    M_value=10000000,
+    m_value=1,
+    L_value=1,
 ):
     # Substitute concrete values
     subs_dict = {
@@ -66,32 +68,70 @@ def solve_system(
     # result = sp.nsolve(
     #     concrete_eqs, (Vx, Vy, vx, vy, omega_after), (0, 0, 100.0, 100.0, 100.0), dict=True
     # )
-    result = sp.solve(concrete_eqs, (Vx, Vy, vx, vy, omega_after), dict=True)
-    print("Result: ", result)
+    results = sp.solve(concrete_eqs, (Vx, Vy, vx, vy, omega_after), dict=True)
+    current_delta = 0
+    best_result = results[0]
+    for result in results:
+        delta = np.sum(
+            [
+                abs(result[vx] - ux_value),
+                abs(result[vy] - uy_value),
+                abs(result[omega_after] - omega_init_value),
+            ]
+        )
+        if delta > current_delta:
+            current_delta = delta
+            best_result = result
 
-    test_result = [eq.subs(result[-1]).evalf() for eq in concrete_eqs]
+
+    test_result = [eq.subs(best_result).evalf() for eq in concrete_eqs]
     for i, eq in enumerate(test_result):
         if abs(eq) > 1e-5:
             print(f"Equation {i+1} not satisfied: {eq}")
 
     return {
-        "vx": result[0][vx],
-        "vy": result[0][vy],
-        "omega_after": result[0][omega_after],
+        "vx": best_result[vx],
+        "vy": best_result[vy],
+        "omega_after": best_result[omega_after],
     }
 
+N_samples = 3
 
-# Substitute concrete values
-subs_dict = {
-    "M_value": 10000000,
-    "m_value": 1,
-    "ux_value": -1.0,
-    "uy_value": 0.0,
-    "omega_init_value": 0.1,
-    "L_value": 1,
-    "theta_value": np.deg2rad(70),
-    "mu_value": 1,
-}
+ux_range = np.linspace(-1.5, 0.5, N_samples)
+uy_range = np.linspace(-0.2, 0.2, N_samples)
+omega_init_range = np.linspace(-0.2, 0.2, N_samples)
+theta_range = np.linspace(50, 85, N_samples)
 
-result = solve_system(**subs_dict)
-print("Result: ", result)
+results = {}
+
+def worker(args):
+    ux_value, uy_value, omega_init_value, theta_value = args
+    result = solve_system(
+        ux_value=ux_value,
+        uy_value=uy_value,
+        omega_init_value=omega_init_value,
+        theta_value=np.deg2rad(theta_value),
+    )
+    return (result["vx"], result["vy"], result["omega_after"])
+
+param_grid = np.array([
+    (ux_value, uy_value, omega_init_value, theta_value)
+    for ux_value in ux_range
+    for uy_value in uy_range
+    for omega_init_value in omega_init_range
+    for theta_value in theta_range
+])
+
+with mp.Pool() as pool:
+    results_list = pool.map(worker, param_grid)
+
+results = np.array(results_list)
+
+np.savez(
+    "results.npz",
+    param_grid=param_grid,
+    results=results,
+)
+
+# Make plots with holoview
+
