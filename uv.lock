@@ -1800,6 +1800,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pybind11-stubgen"
+version = "2.5.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/57/27/0bfd6cfc97a5c061d36465109f324ac4e7f9c67b90732bb24536c29325ab/pybind11_stubgen-2.5.4.tar.gz", hash = "sha256:b6bd44a6d4ba55cef80bd8af92f1f8195b1c6bb0f7bd2f6d785c9530ce6bcae9", size = 24824, upload-time = "2025-05-14T04:01:01.556Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ae/9d/236b014be46c1e75258daa672c9358ec089e6776d75499d2e4050d0fd97e/pybind11_stubgen-2.5.4-py3-none-any.whl", hash = "sha256:8625f25da48cf96eea24ba7cae673b5f49b45847b6ef01eead60c4eb762fe5c5", size = 30008, upload-time = "2025-05-14T04:01:00.275Z" },
+]
+
+[[package]]
 name = "pycparser"
 version = "2.22"
 source = { registry = "https://pypi.org/simple" }
@@ -2196,6 +2205,7 @@ dependencies = [
     { name = "mediapy" },
     { name = "mujoco" },
     { name = "mujoco-mjx" },
+    { name = "pybind11-stubgen" },
     { name = "sympy" },
 ]
 
@@ -2217,6 +2227,7 @@ requires-dist = [
     { name = "mediapy", specifier = ">=1.2.4" },
     { name = "mujoco", specifier = ">=3.3.2" },
     { name = "mujoco-mjx", specifier = ">=3.3.2" },
+    { name = "pybind11-stubgen", specifier = ">=2.5.4" },
     { name = "sympy", specifier = ">=1.14.0" },
 ]
 
