@@ -1,0 +1,11 @@
+{
+"lsp": {
+  "pyright": {
+    "settings": {
+      "python.analysis": {
+        "stubPath": "./.typings"
+        }
+      }
+    }
+  }
+}

@@ -41,6 +41,9 @@ class JumpSimulator:
         """
         self.model = mujoco.MjModel.from_xml_string(xml)
         self.data = mujoco.MjData(self.model)
+        # self.renderer = mujoco.Renderer(self.model)
+        self.model_mjx = mjx.put_model(self.model)
+        self.data_mjx = mjx.put_data(self.model, self.data)
 
         self.data.qpos[0:3] = [0, -0.5, 0.01 + np.cos(self.ia)/4]
         self.data.qpos[3:7] = [np.cos(self.ia / 2), np.sin(self.ia / 2), 0, 0]
@@ -149,4 +152,3 @@ def iterate(hv_min, hv_max, vv_min, vv_max, ia_min, ia_max, av_min, av_max):
 
 
 
-iterate(2.9, 3, -0.6, -0.5, 20, 30, 0, 0.1)
