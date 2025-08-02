@@ -17,16 +17,20 @@
     <!-- Red horizontal cylindrical bar at 2m height, 5m long
     <geom name="horizontal_bar" type="cylinder" size="0.05 2.5" 
           pos="0 0 2" rgba="1 0 0 1" euler="0 1.5708 0"/> -->
+
+<!-- Detection zone on far side of wall (behind the wall from rod's perspective) -->
+      <geom name="far_side_detector" type="box" size="5 2 0.01" 
+            pos="0 -2 0.005" rgba="0 1 0 0.3" 
+            contype="1" conaffinity="1"/>
     
-    <!-- Red X-axis (centered at origin, extends both ways)
+    Red X-axis (centered at origin, extends both ways)
     <geom name="x_axis" type="cylinder" size="0.02 10" 
           pos="0 0 0.01" rgba="1 0 0 1" euler="0 1.5708 0" 
-          contype="0" conaffinity="0"/> -->
+          contype="0" conaffinity="0"/>
 
-    <!-- 2m high rectangular wall -->
-    <geom name="wall" type="box" size="5 0.03 1.0" 
-          pos="0 0 1.0" rgba="0.8 0.4 0.2 1"/>
-    
+    1.5m high rectangular wall
+    <geom name="wall" type="box" size="5 0.03 0.75" pos="0 0 0.75" rgba="0.8 0.4 0.2 1"/>
+
     <!-- Green Y-axis (centered at origin, extends both ways) -->
     <geom name="y_axis" type="cylinder" size="0.02 10" 
           pos="0 0 0.01" rgba="0 1 0 1" euler="1.5708 0 0"
@@ -48,7 +52,7 @@
   <asset>
     <!-- Checkered texture with bigger squares -->
     <texture name="checker_texture" type="2d" builtin="checker" 
-             rgb1="0.2 0.2 0.2" rgb2="0.8 0.8 0.8" width="512" height="512"/>
+             rgb1="0.5 0.5 0.5" rgb2="0.8 0.8 0.8" width="512" height="512"/>
     
     <!-- Material with bigger squares -->
     <material name="checkerboard" texture="checker_texture" 
