@@ -19,9 +19,9 @@
           pos="0 0 2" rgba="1 0 0 1" euler="0 1.5708 0"/> -->
 
 <!-- Detection zone on far side of wall (behind the wall from rod's perspective) -->
-      <geom name="far_side_detector" type="box" size="5 2 0.01" 
+      <geom name="far_side_detector" type="box" size="5 2 0.5" 
             pos="0 -2 0.005" rgba="0 1 0 0.3" 
-            contype="1" conaffinity="1"/>
+            contype="2" conaffinity="1"/>
     
     Red X-axis (centered at origin, extends both ways)
     <geom name="x_axis" type="cylinder" size="0.02 10" 
