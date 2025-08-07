@@ -11,7 +11,7 @@
   <worldbody>
     <!-- Checkered ground plane -->
     <geom name="ground" type="plane" size="10 10 0.1" 
-          rgba="0.8 0.8 0.8 1" material="checkerboard"/>
+          rgba="1 1 1 1" material="checkerboard"/>
     
     <!-- Red horizontal cylindrical bar at 2m height, 5m long
     <geom name="horizontal_bar" type="cylinder" size="0.05 2.5" 
@@ -20,7 +20,7 @@
 <!-- Detection zone on far side of wall (behind the wall from rod's perspective) -->
       <geom name="far_side_detector" type="box" size="5 2 0.5" 
             pos="0 -2 0.005" rgba="0 1 0 0.3" 
-            contype="2" conaffinity="1"/>
+            contype="1" conaffinity="1"/>
     
     Red X-axis (centered at origin, extends both ways)
     <geom name="x_axis" type="cylinder" size="0.02 10" 
@@ -39,7 +39,7 @@
     <body name="rod" pos="0 0 0">
       <freejoint name="rod_joint"/>
       <geom name="rod_geom" type="cylinder" size="0.05 0.96" 
-            rgba="0 0 1 1" mass="2"/>
+            rgba="1 1 1 1" mass="2"/>
       <inertial pos="0 0 0" mass="2" diaginertia="0.167 0.167 0.0025"/>
     </body>
     
@@ -51,7 +51,7 @@
   <asset>
     <!-- Checkered texture with bigger squares -->
     <texture name="checker_texture" type="2d" builtin="checker" 
-             rgb1="0.5 0.5 0.5" rgb2="0.8 0.8 0.8" width="512" height="512"/>
+             rgb1="0.3 0.3 0.3" rgb2="0.5 0.5 0.5" width="512" height="512"/>
     
     <!-- Material with bigger squares -->
     <material name="checkerboard" texture="checker_texture" 
@@ -59,7 +59,7 @@
   </asset>
   
   <visual>
-    <global offwidth="1280" offheight="720"/>
+      <global offwidth="1280" offheight="720"/>
   </visual>
   
   <statistic extent="10" center="0 0 1"/>
