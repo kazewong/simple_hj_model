@@ -1,4 +1,3 @@
-
 <mujoco model="world">
   <compiler angle="radian" coordinate="local" inertiafromgeom="true"/>
   
