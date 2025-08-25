@@ -21,6 +21,11 @@
       <geom name="far_side_detector" type="box" size="5 2 0.5" 
             pos="0 -2 0.005" rgba="0 1 0 0.3" 
             contype="1" conaffinity="1"/>
+
+<!-- Detection zone on wall -->
+      <geom name="side_detector" type="box" size="5 0.05 1.5" 
+            pos="0 -0.08 0" rgba="0 1 0 0.3" 
+            contype="1" conaffinity="1"/>  
     
     Red X-axis (centered at origin, extends both ways)
     <geom name="x_axis" type="cylinder" size="0.02 10" 
@@ -28,7 +33,7 @@
           contype="0" conaffinity="0"/>
 
     1.5m high rectangular wall
-    <geom name="wall" type="box" size="5 0.03 0.75" pos="0 0 0.75" rgba="0.8 0.4 0.2 1"/>
+    <geom name="wall" type="box" size="5 0.03 1.15" pos="0 0 1.15" rgba="0.8 0.4 0.2 1"/>
 
     <!-- Green Y-axis (centered at origin, extends both ways) -->
     <geom name="y_axis" type="cylinder" size="0.02 10" 
@@ -38,7 +43,7 @@
     <!-- Falling cylindrical rod -->
     <body name="rod" pos="0 0 0">
       <freejoint name="rod_joint"/>
-      <geom name="rod_geom" type="cylinder" size="0.05 0.96" 
+      <geom name="rod_geom" type="cylinder" size="0.01 0.96" 
             rgba="1 1 1 1" mass="2"/>
       <inertial pos="0 0 0" mass="2" diaginertia="0.167 0.167 0.0025"/>
     </body>
