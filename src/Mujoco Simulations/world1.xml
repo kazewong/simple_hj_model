@@ -43,7 +43,7 @@
     <!-- Falling cylindrical rod -->
     <body name="rod" pos="0 0 0">
       <freejoint name="rod_joint"/>
-      <geom name="rod_geom" type="cylinder" size="0.01 0.96" 
+      <geom name="rod_geom" type="cylinder" size="0.05 0.96" 
             rgba="1 1 1 1" mass="2"/>
       <inertial pos="0 0 0" mass="2" diaginertia="0.167 0.167 0.0025"/>
     </body>
