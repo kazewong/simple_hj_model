@@ -86,11 +86,12 @@
   </worldbody>
   
   <!-- Position-controlled actuators for smooth jumping -->
-  <actuator>
-    <position name="hip_ctrl" joint="hip" kp="150" kv="15" ctrlrange="-1.2 2.0"/>
-    <position name="knee_ctrl" joint="knee" kp="120" kv="12" ctrlrange="-0.2 2.2"/>
-    <position name="ankle_ctrl" joint="ankle" kp="80" kv="8" ctrlrange="-1.0 1.0"/>
-  </actuator>
+<actuator>
+    <!-- Faster response - increase kp by 50-100% -->
+    <position name="hip_ctrl" joint="hip" kp="300" kv="30" ctrlrange="-1.2 2.0"/>
+    <position name="knee_ctrl" joint="knee" kp="240" kv="24" ctrlrange="-0.2 2.2"/>
+    <position name="ankle_ctrl" joint="ankle" kp="160" kv="16" ctrlrange="-1.0 1.0"/>
+</actuator>
   
   <!-- Jump sequence keyframes -->
   <keyframe>
