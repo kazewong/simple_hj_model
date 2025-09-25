@@ -26,6 +26,7 @@ class InitialConditions:
     knee_vel: float = 0
     ankle_vel: float = 0
 
+    
 class JumpController:
     """Single-jump controller that waits for reset"""
     
@@ -36,7 +37,6 @@ class JumpController:
     def reset_jump(self):
         """Reset jump state - called when 'R' is pressed"""
         self.jump_completed = False
-        self.jump_start_time = 0.0
         
         # Reset all state machine variables
         if hasattr(self, 'jump_state'):
@@ -47,51 +47,61 @@ class JumpController:
         print("Jump sequence reset - ready to jump!")
         
     def get_targets(self, time: float, ground_contact: bool) -> tuple:
-        """Sensor-based jump - reacts to ground contact"""
-        if not self.enabled:
+        """Fixed jump sequence with time-based transitions"""
+        if not self.enabled or self.jump_completed:
             return 0.0, 0.0, 0.0
         
-        if self.jump_completed:
-            return 0.0, 0.0, 0.0
-        
-        # STATE MACHINE based on contact and time
+        # Initialize state machine
         if not hasattr(self, 'jump_state'):
             self.jump_state = 'crouch'
             self.phase_start_time = time
+            print(f"Starting jump sequence at t={time:.2f}")
         
         phase_time = time - self.phase_start_time
+        current_state = self.jump_state
         
         if self.jump_state == 'crouch':
-            if phase_time > 0.3:  # Crouch for 0.3s
+            if phase_time > 0.4:  # Crouch longer
                 self.jump_state = 'load'
                 self.phase_start_time = time
+                print(f"Crouch -> Load at t={time:.2f}, contact={ground_contact}")
             return -0.6, 1.4, -0.3
         
         elif self.jump_state == 'load':
-            if phase_time > 0.1:  # Load for 0.2s then jump
-                self.jump_state = 'jump'
+            if phase_time > 0.15:  # Load phase
+                self.jump_state = 'extend'  # Changed to 'extend' instead of 'jump'
                 self.phase_start_time = time
+                print(f"Load -> Extend at t={time:.2f}, contact={ground_contact}")
             return -0.8, 1.6, -0.2
         
-        elif self.jump_state == 'jump':
-            if not ground_contact:  # After load, before leaving ground
-                self.jump_state = 'flight'
-                self.phase_start_time = time
-            return 0.2, 0.1, 0.4
+        elif self.jump_state == 'extend':
+            # Stay in extend for a bit, then check if we've left ground
+            if phase_time > 0.1:  # Give time for extension
+                if not ground_contact:
+                    self.jump_state = 'flight'
+                    self.phase_start_time = time
+                    print(f"Extend -> Flight at t={time:.2f}")
+                elif phase_time > 0.3:  # Timeout if still on ground
+                    self.jump_state = 'flight'
+                    self.phase_start_time = time
+                    print(f"Extend -> Flight (timeout) at t={time:.2f}")
+            return 0.2, 0.1, 0.4  # Extension pose
         
         elif self.jump_state == 'flight':
-            if ground_contact:  # Landing
+            # Prepare for landing
+            if ground_contact and phase_time > 0.1:  # Small delay to avoid false positives
                 self.jump_state = 'landing'
                 self.phase_start_time = time
-            return -0.3, 1.0, 0.1
+                print(f"Flight -> Landing at t={time:.2f}")
+            return -0.2, 0.8, 0.0  # Flight pose
         
         elif self.jump_state == 'landing':
             if phase_time > 0.5:  # Stable for 0.5s
                 self.jump_completed = True
-            return -0.4, 1.0, -0.1
+                print(f"Jump completed at t={time:.2f}")
+            return -0.4, 1.0, -0.1  # Landing pose
         
         return 0.0, 0.0, 0.0
-
 
 class HumanoidSimulation:
     """Main simulation class with interactive viewer"""
@@ -115,7 +125,23 @@ class HumanoidSimulation:
         
         # Set initial state
         self.reset_simulation()
-        
+
+        self._get_sensor_indices()
+
+    def _get_sensor_indices(self):
+        """Get sensor indices by name"""
+        self.sensor_indices = {}
+        try:
+            self.sensor_indices['heel_contact'] = mujoco.mj_name2id(
+                self.model, mujoco.mjtObj.mjOBJ_SENSOR, 'heel_contact')
+            self.sensor_indices['toe_contact'] = mujoco.mj_name2id(
+                self.model, mujoco.mjtObj.mjOBJ_SENSOR, 'toe_contact')
+            self.sensor_indices['foot_contact'] = mujoco.mj_name2id(
+                self.model, mujoco.mjtObj.mjOBJ_SENSOR, 'foot_contact')
+        except Exception as e:
+            print(f"Warning: Could not find contact sensors: {e}")
+            self.sensor_indices = {}
+
     def _get_indices(self):
         """Get indices for joints and actuators"""
         self.joint_indices = {
@@ -132,6 +158,41 @@ class HumanoidSimulation:
             'knee': mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, 'knee_ctrl'),
             'ankle': mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, 'ankle_ctrl'),
         }
+
+    def get_ground_contact(self):
+        """Proper ground contact detection"""
+        if not self.sensor_indices:
+            # Fallback: check foot height
+            foot_height = self.data.qpos[self.joint_indices['root_z']] - 0.7  # Approximate foot height
+            return foot_height < 0.1
+        
+        try:
+            # Get contact forces from touch sensors
+            heel_force = self.data.sensordata[self.sensor_indices['heel_contact']]
+            toe_force = self.data.sensordata[self.sensor_indices['toe_contact']]
+            foot_force = self.data.sensordata[self.sensor_indices['foot_contact']]
+            
+            # Any significant contact force means ground contact
+            total_contact = heel_force + toe_force + foot_force
+            return total_contact > 0.01  # Much lower threshold for touch sensors
+            
+        except (IndexError, KeyError):
+            # Alternative: use contact array directly
+            return self.check_contact_array()
+
+    def check_contact_array(self):
+        """Alternative contact detection using contact array"""
+        for i in range(self.data.ncon):
+            contact = self.data.contact[i]
+            geom1_name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, contact.geom1)
+            geom2_name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, contact.geom2)
+            
+            # Check if foot parts are in contact with ground
+            foot_geoms = ['foot_main', 'heel', 'toe']
+            if (geom1_name in foot_geoms and geom2_name == 'ground') or \
+               (geom2_name in foot_geoms and geom1_name == 'ground'):
+                return True
+        return False
     
     def reset_simulation(self):
         """Reset simulation to initial conditions"""
@@ -171,11 +232,19 @@ class HumanoidSimulation:
         print(f"Time: {self.data.time:.2f}s")
     
     def control_callback(self, model, data):
-        """Control callback for automatic jumping"""
-        # Get ground contact
-        ground_contact = False
-        if hasattr(data, 'sensordata') and len(data.sensordata) > 15:
-            ground_contact = max(data.sensordata[15:18]) > 0.1
+        """Control callback with better ground detection"""
+        # Better ground contact detection
+        foot_height = data.qpos[1] - 0.85  # Adjust this value based on your model
+        z_velocity = data.qvel[1]
+        
+        # More conservative ground contact detection
+        # On ground if: low height AND (low upward velocity OR moving down)
+        ground_contact = foot_height < 0.05 and z_velocity < 0.5
+        
+        # Debug print
+        if not hasattr(self, '_last_debug') or data.time - self._last_debug > 0.1:
+            print(f"Time: {data.time:.2f}, Height: {foot_height:.3f}, Z_vel: {z_velocity:.2f}, Contact: {ground_contact}")
+            self._last_debug = data.time
         
         # Get control targets
         hip_target, knee_target, ankle_target = self.jump_controller.get_targets(
