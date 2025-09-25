@@ -106,3 +106,109 @@ def mn_rotation_to_quaternion(alpha_deg, beta_deg, gamma_deg, omega_m=0, omega_n
     omega_world = omega_m * m_axis + omega_n * n_axis
     
     return final_quat, omega_world, yz_angle_deg, yz_projection_factor, angle_to_ground_rad
+
+
+import mujoco
+import mujoco.viewer
+import time
+import numpy as np
+
+def check_wall_contact(model, data):
+    
+    rod_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "rod")
+    
+    # Check all contacts in the simulation
+    for i in range(data.ncon):
+        contact = data.contact[i]
+        
+        # Get the geom IDs involved in this contact
+        geom1_id = contact.geom1
+        geom2_id = contact.geom2
+        
+        # Get the body IDs for these geometries
+        body1_id = model.geom_bodyid[geom1_id]
+        body2_id = model.geom_bodyid[geom2_id]
+        
+        # Check if one of the bodies is the rod
+        if body1_id == rod_body_id or body2_id == rod_body_id:
+            # Get the names of the geometries to identify what the rod is touching
+            geom1_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, geom1_id)
+            geom2_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, geom2_id)
+            
+            # Check if either geometry is a wall (assuming walls have "wall" in their name)
+            if (geom1_name and "wall" in geom1_name.lower()) or \
+               (geom2_name and "wall" in geom2_name.lower()):
+                return 0  # Contact with wall detected
+    return
+
+def run_rod_simulation(hv, vv, d, a, b, avm, g, avn):
+    
+    # Load the world model
+    model = mujoco.MjModel.from_xml_path("world1.xml")
+    data = mujoco.MjData(model)
+
+    rod_geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "rod_geom")
+    rod_half_length = model.geom_size[rod_geom_id][1]
+
+    quaternion, omega, yz_angle, yz_projection_factor, angle_to_ground_rad = mn_rotation_to_quaternion(a, b, g, avm, avn)
+    half_projection_length = rod_half_length * yz_projection_factor
+
+    data.qpos[0:3] = [-1, d + half_projection_length * np.cos(np.deg2rad(90 - yz_angle)), rod_half_length*np.sin(angle_to_ground_rad) + 0.1]
+    data.qpos[3:7] = quaternion
+    data.qvel[0:3] = [hv*np.cos(np.deg2rad(a)), -hv*np.sin(np.deg2rad(a)), vv]
+    data.qvel[3:6] = omega
+
+    # Create viewer with keyboard callback
+    paused = True
+
+    def key_callback(keycode):
+        nonlocal paused  # Use nonlocal instead of global
+        if keycode == 32:  # Spacebar key code
+            paused = not paused
+            if paused:
+                print("Simulation PAUSED - Press SPACEBAR to resume")
+            else:
+                print("Simulation STARTED - Press SPACEBAR to pause")
+
+    # Launch the viewer (non-passive for keyboard support)
+    with mujoco.viewer.launch_passive(model, data, key_callback=key_callback) as viewer:
+        # Set camera to look at the origin
+        viewer.cam.lookat[0] = 0    # Look at X=0 (origin)
+        viewer.cam.lookat[1] = 0    # Look at Y=0 (origin)  
+        viewer.cam.lookat[2] = 1.5  # Look at Z=1.5 (slightly above ground)
+        
+        viewer.cam.distance = 12     # Distance from the look-at point
+        viewer.cam.elevation = -20   # Look down at -20 degrees
+        
+        print("Rod is ready! Press SPACEBAR in the viewer window to start/pause simulation")
+        
+        # Initialize time for camera rotation
+        start_time = time.time()
+        
+        while viewer.is_running():
+            if not paused:
+                mujoco.mj_step(model, data)
+                wall_contact_status = check_wall_contact(model, data)
+                if wall_contact_status == 0:
+                    print("Rod has contacted a wall! Simulation paused.")
+                    paused = True
+            
+            # Update camera azimuth to circle around origin
+            current_time = time.time()
+            elapsed_time = current_time - start_time
+            rotation_speed = 10  # degrees per second
+            
+            viewer.sync()
+            time.sleep(0.01)  # Prevent excessive CPU usage when paused
+
+# Usage:
+run_rod_simulation(
+    hv=7,
+    vv=-5.5,
+    d=0.7,
+    a=45,
+    b=10,
+    avm=-5,
+    g=-30,
+    avn=7
+)
