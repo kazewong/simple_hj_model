@@ -3,7 +3,7 @@ import time
 import mujoco
 import mujoco.viewer
 
-m = mujoco.MjModel.from_xml_path('./src/')
+m = mujoco.MjModel.from_xml_path('./src/xmls/stick.xml')
 d = mujoco.MjData(m)
 
 with mujoco.viewer.launch_passive(m, d) as viewer:

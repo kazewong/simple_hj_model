@@ -41,7 +41,7 @@
           contype="0" conaffinity="0"/>
     
     <!-- Falling cylindrical rod -->
-    <body name="rod" pos="0 0 0">
+    <body name="rod" pos="2 2 2">
       <freejoint name="rod_joint"/>
       <geom name="rod_geom" type="cylinder" size="0.05 0.96" 
             rgba="1 1 1 1" mass="2"/>
