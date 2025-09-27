@@ -25,8 +25,6 @@
   
   <default>
     <geom contype="1" conaffinity="1" condim="3" material="body" solimp="0.9 0.95 0.001" solref="0.02 1"/>
-    <joint type="hinge" pos="0 0 0" axis="0 1 0" limited="true" damping="1.0"/>
-    <position ctrlrange="-3.14 3.14" kp="100"/>
   </default>
   
   <worldbody>
