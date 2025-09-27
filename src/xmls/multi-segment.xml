@@ -1,18 +1,5 @@
 <mujoco model="auto_jumping_humanoid_v2">
-  <compiler angle="radian" coordinate="local" inertiafromgeom="true"/>
-  
-  <option timestep="0.002" gravity="0 0 -9.81">
-    <flag warmstart="enable"/>
-  </option>
-  
-  <size nconmax="50" njmax="200"/>
-  
-  <visual>
-    <rgba haze="0.15 0.25 0.35 1"/>
-    <quality shadowsize="2048"/>
-    <map stiffness="700" shadowscale="0.5" fogstart="10" fogend="15"/>
-  </visual>
-  
+
   <asset>
     <texture type="skybox" builtin="gradient" rgb1="0.4 0.6 0.8" rgb2="0.1 0.1 0.2" width="512" height="512"/>
     <texture name="grid" type="2d" builtin="checker" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" width="512" height="512" mark="cross" markrgb="1 1 1"/>
@@ -23,19 +10,9 @@
     <material name="landing" rgba="0.2 1 0.2 0.4"/>
   </asset>
   
-  <default>
-    <geom contype="1" conaffinity="1" condim="3" material="body" solimp="0.9 0.95 0.001" solref="0.02 1"/>
-  </default>
-  
+
   <worldbody>
-    <!-- Ground plane with better friction -->
-    <geom name="ground" type="plane" size="20 20 0.1" material="grid" 
-          contype="1" conaffinity="1" friction="1.0 0.1 0.05"/>
-    
-    <!-- Lighting setup -->
-    <light pos="0 4 6" dir="0 -1 -1" diffuse="0.8 0.8 0.8"/>
-    <light pos="3 -2 4" dir="-1 1 -1" diffuse="0.4 0.4 0.6"/>
-    
+
     <!-- Humanoid body -->
     <body name="torso" pos="0 0 1.2">
       <!-- Root joints for 2D planar motion -->
