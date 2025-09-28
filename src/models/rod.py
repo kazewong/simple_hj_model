@@ -1,3 +1,6 @@
+import mujoco
+
+xml_string = """
 <mujoco model="rod">
   <worldbody>
     <!-- Falling cylindrical rod -->
@@ -16,3 +19,10 @@
   </worldbody>
 
 </mujoco>
+"""
+
+class RodModel:
+    
+    def __init__(self):
+        self.model = mujoco.MjModel.from_xml_string(xml_string)
+        self.data = mujoco.MjData(self.model)

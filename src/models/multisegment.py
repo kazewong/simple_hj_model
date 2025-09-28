@@ -1,3 +1,6 @@
+import mujoco
+
+xml_string = """
 <mujoco model="auto_jumping_humanoid_v2">
 
   <asset>
@@ -135,3 +138,10 @@
     <user name="ground_contact" dim="1"/>
   </sensor>
 </mujoco>
+"""
+
+class MultiSegmentModel:
+    
+    def __init__(self):
+        self.model = mujoco.MjModel.from_xml_string(xml_string)
+        self.model.modelname = "multi-segment"

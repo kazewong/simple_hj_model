@@ -1,15 +1,15 @@
 import mujoco
 import mujoco.viewer as viewer
+from src.models.pit import PitModel
+from src.models.rod import RodModel
+from src.models.multisegment import MultiSegmentModel
 
-pit = mujoco.MjSpec.from_file('./src/xmls/pit.xml')
-pit.modelname = "pit"
+pit = PitModel()
+rod = RodModel()
+multisegment = MultiSegmentModel()
 
-rod = mujoco.MjSpec.from_file('./src/xmls/rod.xml')
-rod.modelname = "rod"
+world = pit.model.attach(rod,frame=pit.model.frames[0], prefix='child-')
+world = pit.model.attach(multisegment, frame=pit.model.frames[0], prefix='multi-')
 
-multisegment = mujoco.MjSpec.from_file('./src/xmls/multi-segment.xml')
-
-world = pit.attach(rod,frame=pit.frames[0], prefix='child-')
-world = pit.attach(multisegment, frame=pit.frames[0], prefix='multi-')
-
-model = pit.compile()
+model = pit.model.compile()
+viewer.launch(model)
