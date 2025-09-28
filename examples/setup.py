@@ -1,15 +1,15 @@
 import mujoco
 import mujoco.viewer as viewer
-from src.models.pit import PitModel
-from src.models.rod import RodModel
-from src.models.multisegment import MultiSegmentModel
+from hjsimulator.models.pit import PitModel
+from hjsimulator.models.rod import RodModel
+from hjsimulator.models.multisegment import MultiSegmentModel
 
 pit = PitModel()
 rod = RodModel()
 multisegment = MultiSegmentModel()
 
-world = pit.model.attach(rod,frame=pit.model.frames[0], prefix='child-')
-world = pit.model.attach(multisegment, frame=pit.model.frames[0], prefix='multi-')
+world = pit.spec.attach(rod.spec,frame=pit.spec.frames[0], prefix='child-')
+world = pit.spec.attach(multisegment.spec, frame=pit.spec.frames[0], prefix='multi-')
 
-model = pit.model.compile()
+model = pit.spec.compile()
 viewer.launch(model)

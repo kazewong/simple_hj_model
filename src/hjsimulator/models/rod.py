@@ -24,5 +24,4 @@ xml_string = """
 class RodModel:
     
     def __init__(self):
-        self.model = mujoco.MjModel.from_xml_string(xml_string)
-        self.data = mujoco.MjData(self.model)
+        self.spec = mujoco.MjSpec.from_string(xml_string)

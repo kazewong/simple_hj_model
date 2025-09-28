@@ -1,6 +1,6 @@
 import mujoco
 
-xml_model = """
+xml_string = """
 <mujoco model="world">
     <compiler angle="radian" coordinate="local" inertiafromgeom="true" />
 
@@ -170,5 +170,4 @@ xml_model = """
 class PitModel:
     
     def __init__(self):
-        self.model = mujoco.MjModel.from_xml_string(xml_model)
-        self.data = mujoco.MjData(self.model)
+        self.spec = mujoco.MjSpec.from_string(xml_string)

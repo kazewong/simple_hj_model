@@ -143,5 +143,4 @@ xml_string = """
 class MultiSegmentModel:
     
     def __init__(self):
-        self.model = mujoco.MjModel.from_xml_string(xml_string)
-        self.model.modelname = "multi-segment"
+        self.spec = mujoco.MjSpec.from_string(xml_string)
