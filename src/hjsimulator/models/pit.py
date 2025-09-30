@@ -8,9 +8,10 @@ xml_string = """
     <flag warmstart="enable" />
     </option>
     <visual>
-    <rgba haze="0.15 0.25 0.35 1" />
-    <quality shadowsize="2048" />
-    <map stiffness="700" shadowscale="0.5" fogstart="10" fogend="15" />
+        <rgba haze="0.15 0.25 0.35 1" />
+        <quality shadowsize="2048" />
+        <map stiffness="700" shadowscale="0.5" fogstart="10" fogend="15" />
+        <global azimuth="-10" elevation="-5.5" />
     </visual>
     <default>
     <geom
@@ -23,6 +24,7 @@ xml_string = """
     </default>
 
   <worldbody>
+
   <frame pos="0 0 0">
     <!-- Checkered ground plane -->
     <geom
@@ -167,7 +169,7 @@ xml_string = """
 </mujoco>
 """
 
+
 class PitModel:
-    
     def __init__(self):
         self.spec = mujoco.MjSpec.from_string(xml_string)

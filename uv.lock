@@ -597,6 +597,7 @@ dependencies = [
     { name = "mediapy" },
     { name = "mujoco" },
     { name = "mujoco-mjx" },
+    { name = "scipy" },
     { name = "sympy" },
 ]
 
@@ -619,6 +620,7 @@ requires-dist = [
     { name = "mediapy", specifier = ">=1.2.4" },
     { name = "mujoco", specifier = ">=3.3.2" },
     { name = "mujoco-mjx", specifier = ">=3.3.2" },
+    { name = "scipy", specifier = ">=1.15.2" },
     { name = "sympy", specifier = ">=1.14.0" },
 ]
 
