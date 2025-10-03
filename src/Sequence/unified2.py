@@ -113,20 +113,6 @@ import mujoco.viewer
 import time
 import numpy as np
 
-def quat_multiply(q1, q2):
-    """
-    Multiply two quaternions: q1 * q2
-    Remember: q2 is applied first, then q1
-    """
-    w1, x1, y1, z1 = q1
-    w2, x2, y2, z2 = q2
-    return np.array([
-        w1*w2 - x1*x2 - y1*y2 - z1*z2,
-        w1*x2 + x1*w2 + y1*z2 - z1*y2,
-        w1*y2 - x1*z2 + y1*w2 + z1*x2,
-        w1*z2 + x1*y2 - y1*x2 + z1*w2
-    ])
-
 def check_wall_contact(model, data):
     try:
         leg_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "leg_body")
@@ -176,7 +162,7 @@ def run_leg_simulation(hv, vv, d, a, b, avm, g, avn):
     - hv: horizontal velocity
     - vv: vertical velocity  
     - d: lateral displacement
-    - a: alpha angle (approach direction) - FOOT WILL POINT IN THIS DIRECTION
+    - a: alpha angle (approach direction)
     - b: beta rotation (around m-axis)
     - avm: angular velocity around m-axis
     - g: gamma rotation (around n-axis) 
@@ -185,7 +171,7 @@ def run_leg_simulation(hv, vv, d, a, b, avm, g, avn):
     
     try:
         # Load the leg model (update this path to your leg XML file)
-        model = mujoco.MjModel.from_xml_path(r"C:\Users\eligi\Downloads\simple_hj_model\src\Sequence\unified.xml")
+        model = mujoco.MjModel.from_xml_path(r"C:/Users/eligi/Downloads/simple_hj_model/src/Sequence/unified.xml")
     except Exception as e:
         print(f"Error loading model: {e}")
         return
@@ -199,27 +185,11 @@ def run_leg_simulation(hv, vv, d, a, b, avm, g, avn):
     print(f"\n=== Leg Simulation Parameters ===")
     print(f"Velocities: hv={hv}, vv={vv}")
     print(f"Position: d={d}")
-    print(f"Rotations: α={a}° (foot direction), β={b}°, γ={g}°")
+    print(f"Rotations: α={a}°, β={b}°, γ={g}°")
     print(f"Angular velocities: ωm={avm}, ωn={avn}")
 
-    # Get the m-n coordinate rotations (beta and gamma only, without alpha)
-    mn_quaternion, omega, yz_angle, yz_projection_factor, angle_to_ground_rad = mn_rotation_to_quaternion(0, b, g, avm, avn)
-    
-    # Create foot direction quaternion - this makes the foot point in direction 'a'
-    # The foot naturally points in +X direction, so we rotate around Z-axis by angle 'a'
-    foot_direction_angle = -np.radians(a)
-    foot_direction_quat = np.array([
-        np.cos(foot_direction_angle / 2),  # w
-        0,                                 # x
-        0,                                 # y  
-        np.sin(foot_direction_angle / 2)   # z
-    ])
-    
-    # Combine rotations: foot direction first, then m-n rotations relative to that direction
-    # This means beta and gamma happen in the foot-aligned coordinate frame
-    final_quaternion = quat_multiply(mn_quaternion, foot_direction_quat)
-    
-    print(f"Foot pointing direction: {a}°")
+    # Use EXACTLY the same rotation calculation as the original
+    quaternion, omega, yz_angle, yz_projection_factor, angle_to_ground_rad = mn_rotation_to_quaternion(a, b, g, avm, avn)
     
     # Use EXACTLY the same position calculation as the original
     half_projection_length = leg_half_length * yz_projection_factor
@@ -235,11 +205,11 @@ def run_leg_simulation(hv, vv, d, a, b, avm, g, avn):
     
     print(f"World velocity: ({vel_x:.2f}, {vel_y:.2f}, {vv})")
     print(f"Initial position: ({initial_pos[0]:.2f}, {initial_pos[1]:.2f}, {initial_pos[2]:.2f})")
-    print(f"Final quaternion: [{final_quaternion[0]:.3f}, {final_quaternion[1]:.3f}, {final_quaternion[2]:.3f}, {final_quaternion[3]:.3f}]")
+    print(f"Quaternion: [{quaternion[0]:.3f}, {quaternion[1]:.3f}, {quaternion[2]:.3f}, {quaternion[3]:.3f}]")
 
-    # Set initial state
+    # Set initial state - EXACTLY the same as original
     data.qpos[0:3] = initial_pos
-    data.qpos[3:7] = final_quaternion  # Use the combined quaternion
+    data.qpos[3:7] = quaternion
     data.qvel[0:3] = [vel_x, vel_y, vv]
     data.qvel[3:6] = omega
 
@@ -300,13 +270,15 @@ def run_leg_simulation(hv, vv, d, a, b, avm, g, avn):
             viewer.sync()
             time.sleep(0.01)  # Prevent excessive CPU usage when paused
 
-# Usage - Test different foot directions:
+# Usage - EXACTLY the same call as your original:
 if __name__ == "__main__":
-    
-    # Test 1: Foot pointing at 45 degrees
-    print("="*60)
-    print("TEST 1: Foot pointing at 45°")
     run_leg_simulation(
-        hv=6, vv=-5, d=1, a=45, b=0, avm=0, g=-30, avn=0
+        hv=7,
+        vv=-5.5,
+        d=0.7,
+        a=45,
+        b=0,
+        avm=0,
+        g=-30,
+        avn=0
     )
-    

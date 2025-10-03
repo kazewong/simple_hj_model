@@ -112,6 +112,9 @@ class HumanoidSimulation:
         self.reset_requested = False
         self.step_once = False
 
+        self.log_counter = 0
+        self.log_every_n_steps = 10  # Log every 10th step (1/10 frequency)
+
         # Indices and setup
         self._resolve_indices()
         self.reset_simulation()
@@ -200,6 +203,9 @@ class HumanoidSimulation:
         self.max_abs = {'hip': 0.0, 'knee': 0.0, 'ankle': 0.0}
         self._log_saved = False
 
+        self.log_counter = 0
+
+
         print("Simulation reset - new jump sequence starting!")
         self.print_current_state()
 
@@ -230,6 +236,10 @@ class HumanoidSimulation:
         return d.ncon > 0
 
     def _log_forces_per_step(self):
+        self.log_counter += 1
+        if self.log_counter % self.log_every_n_steps != 0:
+            return  # Skip logging this step
+        
         """Log generalized joint forces and update running maxima."""
         d = self.data
         di = self.dof_idx  # dof indices

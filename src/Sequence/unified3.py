@@ -25,15 +25,6 @@ def mn_rotation_to_quaternion(alpha_deg, beta_deg, gamma_deg, omega_m=0, omega_n
     # m-axis direction vector (perpendicular to n, in xy plane)
     m_axis = np.array([-np.sin(alpha), np.cos(alpha), 0])
     
-    # Create rotation quaternions for each axis
-    def axis_angle_to_quat(axis, angle):
-        """Convert axis-angle to quaternion"""
-        axis = axis / np.linalg.norm(axis)  # normalize
-        half_angle = angle / 2
-        w = np.cos(half_angle)
-        xyz = axis * np.sin(half_angle)
-        return np.array([w, xyz[0], xyz[1], xyz[2]])
-    
     # Create rotation matrices for each axis (for direct calculation)
     def axis_angle_to_rotation_matrix(axis, angle):
         """Convert axis-angle to rotation matrix"""
@@ -69,7 +60,7 @@ def mn_rotation_to_quaternion(alpha_deg, beta_deg, gamma_deg, omega_m=0, omega_n
 
     angle_to_ground_rad = np.arcsin(abs(world_rod_axis[2]))  # |z_component|
     
-    # Still need quaternion for MuJoCo, so convert from rotation matrix
+    # Convert rotation matrix to quaternion
     def rotation_matrix_to_quat(R):
         """Convert rotation matrix to quaternion"""
         trace = np.trace(R)
@@ -147,7 +138,6 @@ def check_wall_contact(model, data):
         body2_id = model.geom_bodyid[geom2_id]
         
         # Check if one of the bodies is the leg (or any of its child bodies)
-        # We need to check the entire leg kinematic chain
         leg_bodies = []
         try:
             leg_bodies.append(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "leg_body"))
@@ -170,58 +160,60 @@ def check_wall_contact(model, data):
 
 def run_leg_simulation(hv, vv, d, a, b, avm, g, avn):
     """
-    Run leg simulation using the exact same parameter definitions as the original stick code
+    FINAL VERSION: Both m-n parameters AND foot direction work correctly
     
-    Parameters (EXACTLY as in original):
+    Parameters:
     - hv: horizontal velocity
     - vv: vertical velocity  
     - d: lateral displacement
-    - a: alpha angle (approach direction) - FOOT WILL POINT IN THIS DIRECTION
-    - b: beta rotation (around m-axis)
+    - a: alpha angle - defines m-n axes AND foot pointing direction
+    - b: beta rotation (around m-axis perpendicular to direction a)
     - avm: angular velocity around m-axis
-    - g: gamma rotation (around n-axis) 
+    - g: gamma rotation (around n-axis along direction a) 
     - avn: angular velocity around n-axis
     """
     
     try:
-        # Load the leg model (update this path to your leg XML file)
         model = mujoco.MjModel.from_xml_path(r"C:\Users\eligi\Downloads\simple_hj_model\src\Sequence\unified.xml")
     except Exception as e:
         print(f"Error loading model: {e}")
         return
         
     data = mujoco.MjData(model)
-
-    # For the leg, we'll estimate the "length" as the total extended length
-    # This replaces the rod_half_length calculation
-    leg_half_length = 1.0  # Approximate: torso(0.3) + thigh(0.35) + shin(0.35) + foot ≈ 1.0
+    leg_half_length = 1.0
 
     print(f"\n=== Leg Simulation Parameters ===")
     print(f"Velocities: hv={hv}, vv={vv}")
     print(f"Position: d={d}")
-    print(f"Rotations: α={a}° (foot direction), β={b}°, γ={g}°")
+    print(f"Rotations: α={a}° (m-n axes & foot direction), β={b}°, γ={g}°")
     print(f"Angular velocities: ωm={avm}, ωn={avn}")
 
-    # Get the m-n coordinate rotations (beta and gamma only, without alpha)
-    mn_quaternion, omega, yz_angle, yz_projection_factor, angle_to_ground_rad = mn_rotation_to_quaternion(0, b, g, avm, avn)
+    # Step 1: Get m-n rotations using the ORIGINAL system (this works correctly)
+    mn_quaternion, omega, yz_angle, yz_projection_factor, angle_to_ground_rad = mn_rotation_to_quaternion(a, b, g, avm, avn)
     
-    # Create foot direction quaternion - this makes the foot point in direction 'a'
-    # The foot naturally points in +X direction, so we rotate around Z-axis by angle 'a'
-    foot_direction_angle = -np.radians(a)
-    foot_direction_quat = np.array([
-        np.cos(foot_direction_angle / 2),  # w
+    # Step 2: Create foot alignment quaternion
+    # The leg's foot points in +X direction by default
+    # We want it to point in direction 'a'
+    # We need to rotate by 'a' around the Z-axis, but in the CORRECT direction
+    
+    # Test both directions to see which one works:
+    foot_alignment_angle = -np.radians(a)  # Try positive first
+    foot_alignment_quat = np.array([
+        np.cos(foot_alignment_angle / 2),  # w
         0,                                 # x
         0,                                 # y  
-        np.sin(foot_direction_angle / 2)   # z
+        np.sin(foot_alignment_angle / 2)   # z
     ])
     
-    # Combine rotations: foot direction first, then m-n rotations relative to that direction
-    # This means beta and gamma happen in the foot-aligned coordinate frame
-    final_quaternion = quat_multiply(mn_quaternion, foot_direction_quat)
+    # Step 3: Combine the rotations
+    # We want: m-n rotations happen in the coordinate system where foot points in direction 'a'
+    # So: foot alignment FIRST, then m-n rotations
+    final_quaternion = quat_multiply(mn_quaternion, foot_alignment_quat)
     
-    print(f"Foot pointing direction: {a}°")
+    print(f"M-N axes: m⟂{a}°, n∥{a}°")
+    print(f"Foot pointing: {a}°")
     
-    # Use EXACTLY the same position calculation as the original
+    # Use EXACTLY the same calculations as original working code
     half_projection_length = leg_half_length * yz_projection_factor
     initial_pos = np.array([
         -1, 
@@ -229,62 +221,46 @@ def run_leg_simulation(hv, vv, d, a, b, avm, g, avn):
         leg_half_length * np.sin(angle_to_ground_rad) + 0.1
     ])
     
-    # Use EXACTLY the same velocity calculation as the original
     vel_x = hv * np.cos(np.radians(a))
     vel_y = -hv * np.sin(np.radians(a))
     
     print(f"World velocity: ({vel_x:.2f}, {vel_y:.2f}, {vv})")
     print(f"Initial position: ({initial_pos[0]:.2f}, {initial_pos[1]:.2f}, {initial_pos[2]:.2f})")
-    print(f"Final quaternion: [{final_quaternion[0]:.3f}, {final_quaternion[1]:.3f}, {final_quaternion[2]:.3f}, {final_quaternion[3]:.3f}]")
 
     # Set initial state
     data.qpos[0:3] = initial_pos
-    data.qpos[3:7] = final_quaternion  # Use the combined quaternion
+    data.qpos[3:7] = final_quaternion
     data.qvel[0:3] = [vel_x, vel_y, vv]
     data.qvel[3:6] = omega
 
-    # Set leg joint positions to neutral (extended leg pointing down)
+    # Set leg joints to neutral
     try:
-        hip_joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "hip")
-        knee_joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "knee")
-        ankle_joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "ankle")
-        
-        # Set to neutral positions (leg extended downward)
         data.qpos[7] = 0.0   # hip neutral
         data.qpos[8] = 0.0   # knee neutral  
         data.qpos[9] = 0.0   # ankle neutral
-        
         print("Leg joints set to neutral positions")
     except:
         print("Warning: Could not find leg joints")
 
-    # Create viewer with keyboard callback - EXACTLY the same as original
+    # Viewer setup
     paused = True
 
     def key_callback(keycode):
         nonlocal paused
-        if keycode == 32:  # Spacebar key code
+        if keycode == 32:  # Spacebar
             paused = not paused
-            if paused:
-                print("Simulation PAUSED - Press SPACEBAR to resume")
-            else:
-                print("Simulation STARTED - Press SPACEBAR to pause")
+            print("Simulation PAUSED" if paused else "Simulation STARTED")
 
-    # Launch the viewer - EXACTLY the same as original
     with mujoco.viewer.launch_passive(model, data, key_callback=key_callback) as viewer:
-        # Set camera to look at the origin - EXACTLY the same as original
-        viewer.cam.lookat[0] = 0    # Look at X=0 (origin)
-        viewer.cam.lookat[1] = 0    # Look at Y=0 (origin)  
-        viewer.cam.lookat[2] = 1.5  # Look at Z=1.5 (slightly above ground)
-        
-        viewer.cam.distance = 12     # Distance from the look-at point
-        viewer.cam.elevation = -20   # Look down at -20 degrees
+        viewer.cam.lookat[0] = 0
+        viewer.cam.lookat[1] = 0  
+        viewer.cam.lookat[2] = 1.5
+        viewer.cam.distance = 12
+        viewer.cam.elevation = -20
         
         print("\n=== Controls ===")
-        print("Leg is ready! Press SPACEBAR in the viewer window to start/pause simulation")
-        print("Close window to exit")
+        print("Press SPACEBAR to start/pause simulation")
         
-        # Initialize time
         start_time = time.time()
         
         while viewer.is_running():
@@ -293,20 +269,18 @@ def run_leg_simulation(hv, vv, d, a, b, avm, g, avn):
                 wall_contact_status = check_wall_contact(model, data)
                 if wall_contact_status == 0:
                     elapsed_time = time.time() - start_time
-                    print(f"\n*** WALL CONTACT DETECTED at t={elapsed_time:.2f}s ***")
-                    print("Leg has contacted a wall! Simulation paused.")
+                    print(f"\n*** WALL CONTACT at t={elapsed_time:.2f}s ***")
                     paused = True
             
             viewer.sync()
-            time.sleep(0.01)  # Prevent excessive CPU usage when paused
+            time.sleep(0.01)
 
-# Usage - Test different foot directions:
+# Test to verify BOTH issues are fixed:
 if __name__ == "__main__":
+    print("Testing BOTH m-n parameters AND foot direction...")
     
-    # Test 1: Foot pointing at 45 degrees
-    print("="*60)
-    print("TEST 1: Foot pointing at 45°")
-    run_leg_simulation(
-        hv=6, vv=-5, d=1, a=45, b=0, avm=0, g=-30, avn=0
-    )
-    
+    # This should:
+    # 1. Have foot pointing at 45°
+    # 2. Have beta rotation around m-axis (perpendicular to 45°)  
+    # 3. Have gamma rotation around n-axis (along 45°)
+    run_leg_simulation(hv=7, vv=-5.5, d=0.7, a=45, b=0, avm=0, g=-20, avn=7)

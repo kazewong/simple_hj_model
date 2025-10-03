@@ -144,7 +144,7 @@ def check_wall_contact(model, data):
 def run_rod_simulation(hv, vv, d, a, b, avm, g, avn):
     
     # Load the world model
-    model = mujoco.MjModel.from_xml_path("world1.xml")
+    model = mujoco.MjModel.from_xml_path("C:/Users/eligi/Downloads/simple_hj_model/src/consolidatedcode/world1.xml")
     data = mujoco.MjData(model)
 
     rod_geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "rod_geom")
@@ -207,8 +207,8 @@ run_rod_simulation(
     vv=-5.5,
     d=0.7,
     a=45,
-    b=10,
-    avm=-5,
+    b=0,
+    avm=0,
     g=-30,
-    avn=7
+    avn=0
 )
