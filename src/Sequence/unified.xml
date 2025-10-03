@@ -1,0 +1,87 @@
+<mujoco model="leg_in_stick_world">
+  <compiler angle="radian" coordinate="local" inertiafromgeom="true"/>
+  
+  <!-- Use stick's physics settings -->
+  <option timestep="0.002" integrator="RK4" gravity="0 0 -9.81"/>
+  
+  <!-- Use stick's contact settings -->
+  <default>
+    <geom contype="1" conaffinity="1" friction="3 3 3" 
+          solimp="0.995 0.995 0.001" solref="0.005 0.3"/>
+    <!-- Keep leg joint defaults -->
+    <joint type="hinge" pos="0 0 0" axis="0 1 0" limited="true" damping="1.0"/>
+    <position ctrlrange="-3.14 3.14" kp="100"/>
+  </default>
+  
+  <worldbody>
+    <!-- STICK'S WORLD - copy exactly -->
+    <geom name="ground" type="plane" size="5 5 0.1" 
+          rgba="1 1 1 1" material="checkerboard"/>
+
+    
+    <geom name="wall" type="box" size="2 0.01 0.5" pos="0 0 0.5" rgba="0.8 0.4 0.2 1"/>
+
+    <geom name="x_axis" type="cylinder" size="0.02 10" 
+          pos="0 0 0.01" rgba="1 0 0 1" euler="0 1.5708 0" 
+          contype="0" conaffinity="0"/>
+
+    <geom name="y_axis" type="cylinder" size="0.02 10" 
+          pos="0 0 0.01" rgba="0 1 0 1" euler="1.5708 0 0"
+          contype="0" conaffinity="0"/>
+            
+    <!-- REPLACE STICK WITH LEG - but use freejoint like stick -->
+    <body name="leg_body" pos="0 0 0" euler="0 0 0">  <!-- We'll set this rotation in Python -->
+        <freejoint name="leg_joint"/>
+        
+        <!-- LEG STRUCTURE - foot now points in +X direction relative to leg_body -->
+        <geom name="torso" type="capsule" fromto="0 0 -0.15 0 0 0.15" size="0.08" mass="15" friction="1 1 1" rgba="0.2 0.4 0.8 1"/>
+        
+        <body name="thigh" pos="0 0 -0.2">
+            <joint name="hip" range="-1.2 2.0" stiffness="10" armature="0.01" damping="2.0"/>
+            <geom name="thigh" type="capsule" fromto="0 0 0 0 0 -0.35" size="0.045" mass="4" friction="1 1 1" rgba="0.2 0.4 0.8 1"/>
+            
+            <body name="shin" pos="0 0 -0.35">
+            <joint name="knee" range="-0.2 2.2" stiffness="8" armature="0.01" damping="1.8"/>
+            <geom name="shin" type="capsule" fromto="0 0 0 0 0 -0.35" size="0.035" mass="2" friction="1 1 1" rgba="0.2 0.4 0.8 1"/>
+            
+            <body name="foot" pos="0 0 -0.35">
+                <joint name="ankle" range="-1.0 1.0" stiffness="5" armature="0.01" damping="1.2"/>
+                <!-- Foot now clearly points forward in +X direction -->
+                <geom name="foot_main" type="box" size="0.12 0.05 0.035" pos="0.05 0 -0.035" 
+                    mass="1.0" rgba="0.2 0.4 0.8 1" friction="1.5 0.1 0.05"/>
+                <geom name="foot_sole_back" type="box" size="0.04 0.05 0.005" pos="-0.03 0 -0.065" 
+                    mass="0.01" rgba="0.2 0.8 0.2 1" friction="2.0 0.1 0.05"/>
+                <geom name="foot_sole_front" type="box" size="0.04 0.05 0.005" pos="0.13 0 -0.065" 
+                    mass="0.01" rgba="0.2 0.8 0.2 1" friction="2.0 0.1 0.05"/>
+            </body>
+            </body>
+        </body>
+        
+        <inertial pos="0 0 -0.5" mass="22" diaginertia="2.0 2.0 0.1"/>
+        </body>    
+    <!-- STICK'S LIGHTING -->
+    <light directional="true" ambient="0.2 0.2 0.2" diffuse="0.8 0.8 0.8" 
+           specular="0.3 0.3 0.3" castshadow="false" pos="0 0 20" dir="0 0 -1"/>
+  </worldbody>
+  
+  <!-- Keep leg actuators -->
+  <actuator>
+    <position name="hip_ctrl" joint="hip" kp="300" kv="30" ctrlrange="-1.2 2.0"/>
+    <position name="knee_ctrl" joint="knee" kp="240" kv="24" ctrlrange="-0.2 2.2"/>
+    <position name="ankle_ctrl" joint="ankle" kp="160" kv="16" ctrlrange="-1.0 1.0"/>
+  </actuator>
+  
+  <!-- STICK'S ASSETS -->
+  <asset>
+    <texture name="checker_texture" type="2d" builtin="checker" 
+             rgb1="0.3 0.3 0.3" rgb2="0.5 0.5 0.5" width="512" height="512"/>
+    <material name="checkerboard" texture="checker_texture" 
+              texrepeat="2 2" texuniform="true" reflectance="0.1"/>
+  </asset>
+  
+  <visual>
+      <global offwidth="1280" offheight="720"/>
+  </visual>
+  
+  <statistic extent="10" center="0 0 1"/>
+</mujoco>

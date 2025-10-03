@@ -15,16 +15,16 @@ class InitialConditions:
     """Starting state"""
     # Root pose
     x_pos: float = -1.0
-    z_pos: float = 0.1
-    rotation: float = -0.7
+    z_pos: float = 0.2
+    rotation: float = -0.5
     # Joint angles
-    hip_angle: float = 0
-    knee_angle: float = 0
-    ankle_angle: float = 0
+    hip_angle: float = -0.8
+    knee_angle: float = 1.0
+    ankle_angle: float = -0.4
     # Velocities
-    x_vel: float = 5
-    z_vel: float = -3
-    rot_vel: float = 4
+    x_vel: float = 2.0
+    z_vel: float = 0.0
+    rot_vel: float = 1.5
     hip_vel: float = 0.0
     knee_vel: float = 0.0
     ankle_vel: float = 0.0
@@ -48,48 +48,47 @@ class JumpController:
         print("Jump sequence reset - ready to jump!")
 
     def get_targets(self, t: float, ground_contact: bool) -> tuple[float, float, float]:
-        return 0, 0, 0
-        # """Return hip/knee/ankle command targets."""
-        # if not self.enabled or self.jump_completed:
-        #     return 0.0, 0.0, 0.0
+        """Return hip/knee/ankle command targets."""
+        if not self.enabled or self.jump_completed:
+            return 0.0, 0.0, 0.0
 
-        # # lazy-init
-        # if not hasattr(self, 'jump_state'):
-        #     self.jump_state = 'crouch'
-        #     self.phase_start_time = t
+        # lazy-init
+        if not hasattr(self, 'jump_state'):
+            self.jump_state = 'crouch'
+            self.phase_start_time = t
 
-        # phase_time = t - self.phase_start_time
+        phase_time = t - self.phase_start_time
 
-        # if self.jump_state == 'crouch':
-        #     if phase_time > 0.3:
-        #         self.jump_state = 'load'
-        #         self.phase_start_time = t
-        #     return -0.6, 1.4, -0.3
+        if self.jump_state == 'crouch':
+            if phase_time > 0.3:
+                self.jump_state = 'load'
+                self.phase_start_time = t
+            return -0.6, 1.4, -0.3
 
-        # elif self.jump_state == 'load':
-        #     if phase_time > 0.2:
-        #         self.jump_state = 'jump'
-        #         self.phase_start_time = t
-        #     return -0.8, 1.6, -0.2
+        elif self.jump_state == 'load':
+            if phase_time > 0.2:
+                self.jump_state = 'jump'
+                self.phase_start_time = t
+            return -0.8, 1.6, -0.2
 
-        # elif self.jump_state == 'jump':
-        #     if not ground_contact:
-        #         self.jump_state = 'flight'
-        #         self.phase_start_time = t
-        #     return 0.2, 0.1, 0.4
+        elif self.jump_state == 'jump':
+            if not ground_contact:
+                self.jump_state = 'flight'
+                self.phase_start_time = t
+            return 0.2, 0.1, 0.4
 
-        # elif self.jump_state == 'flight':
-        #     if ground_contact:
-        #         self.jump_state = 'landing'
-        #         self.phase_start_time = t
-        #     return -0.3, 1.0, 0.1
+        elif self.jump_state == 'flight':
+            if ground_contact:
+                self.jump_state = 'landing'
+                self.phase_start_time = t
+            return -0.3, 1.0, 0.1
 
-        # elif self.jump_state == 'landing':
-        #     if phase_time > 0.5:
-        #         self.jump_completed = True
-        #     return -0.4, 1.0, -0.1
+        elif self.jump_state == 'landing':
+            if phase_time > 0.5:
+                self.jump_completed = True
+            return -0.4, 1.0, -0.1
 
-        # return 0.0, 0.0, 0.0
+        return 0.0, 0.0, 0.0
 
 
 # ----------------------------
@@ -255,7 +254,7 @@ class HumanoidSimulation:
         elif keycode == ord('R'):
             self.reset_requested = True
 
-        elif keycode == ord('1'):   # step once (when paused)
+        elif keycode == ord('T'):   # step once (when paused)
             if self.paused:
                 self.step_once = True
                 print("Stepping once...")
@@ -266,8 +265,53 @@ class HumanoidSimulation:
             if self.jump_controller.enabled and self.jump_controller.jump_completed:
                 print("Jump already completed - press 'R' to jump again")
 
+
         elif keycode == ord('P'):   # print state + current max loads
             self.print_current_state()
+
+        # Initial condition tweaks (apply with 'R')
+        elif keycode == ord('Q'):
+            self.initial_conditions.z_pos += 0.2
+            print(f"Initial height: {self.initial_conditions.z_pos:.2f} (press 'R' to apply)")
+
+        elif keycode == ord('A'):
+            self.initial_conditions.z_pos = max(0.5, self.initial_conditions.z_pos - 0.2)
+            print(f"Initial height: {self.initial_conditions.z_pos:.2f} (press 'R' to apply)")
+
+        elif keycode == ord('W'):
+            self.initial_conditions.x_pos += 0.5
+            print(f"Initial X position: {self.initial_conditions.x_pos:.2f} (press 'R' to apply)")
+
+        elif keycode == ord('S'):
+            self.initial_conditions.x_pos -= 0.5
+            print(f"Initial X position: {self.initial_conditions.x_pos:.2f} (press 'R' to apply)")
+
+        elif keycode == ord('U'):
+            self.initial_conditions.x_vel += 0.5
+            print(f"Initial X velocity: {self.initial_conditions.x_vel:.2f} (press 'R' to apply)")
+
+        elif keycode == ord('I'):
+            self.initial_conditions.x_vel -= 0.5
+            print(f"Initial X velocity: {self.initial_conditions.x_vel:.2f} (press 'R' to apply)")
+
+        elif keycode == ord('O'):
+            self.initial_conditions.z_vel += 0.5
+            print(f"Initial Z velocity: {self.initial_conditions.z_vel:.2f} (press 'R' to apply)")
+
+        elif keycode == ord('L'):
+            self.initial_conditions.z_vel -= 0.5
+            print(f"Initial Z velocity: {self.initial_conditions.z_vel:.2f} (press 'R' to apply)")
+
+        elif keycode == ord('Z'):
+            self.initial_conditions.x_vel = 0.0
+            self.initial_conditions.z_vel = 0.0
+            self.initial_conditions.rot_vel = 0.0
+            print("All initial velocities reset to zero (press 'R' to apply)")
+
+        elif keycode == ord('X'):
+            self.initial_conditions.x_pos = 0.0
+            self.initial_conditions.z_pos = 1.2
+            print("Position reset to origin (0, 1.2) (press 'R' to apply)")
 
         elif keycode == ord('H'):
             self.print_help()
@@ -278,7 +322,7 @@ class HumanoidSimulation:
         print("SPACE : Pause/Resume")
         print("R     : Reset simulation and start new jump")
         print("N     : Start new jump (without full reset)")
-        print("1     : Step once (when paused)")
+        print("T     : Step once (when paused)")
         print("J     : Toggle jump controller")
         print("P     : Print state")
         print("H     : Show this help")
@@ -330,7 +374,7 @@ class HumanoidSimulation:
 # ----------------------------
 
 def main():
-    model_path = r"C:/Users/eligi/Downloads/simple_hj_model/src/Sequence/bio-model.xml"
+    model_path = r"C:/Users/eligi/Downloads/simple_hj_model/src/Sequence/new.xml"
 
     if not os.path.exists(model_path):
         print(f"Error: XML file not found at: {model_path}")
