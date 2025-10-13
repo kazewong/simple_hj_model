@@ -2,7 +2,7 @@ import mujoco
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-xml_string = """
+rod_xml = """
 <mujoco model="rod">
   <worldbody>
     <!-- Falling cylindrical rod -->
@@ -41,7 +41,7 @@ class RodModel:
         self.euler_angle = euler_angle
         self.position = position
 
-        spec = mujoco.MjSpec.from_string(xml_string)
+        spec = mujoco.MjSpec.from_string(rod_xml)
         spec.bodies[1].geoms[0].size[0] = self.width
         spec.bodies[1].geoms[0].size[1] = self.length
         spec.bodies[1].geoms[0].mass = self.mass

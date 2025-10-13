@@ -1,6 +1,6 @@
 import mujoco
 
-xml_string = """
+multisegment_xml = """
 <mujoco model="auto_jumping_humanoid_v2">
 
   <asset>
@@ -143,4 +143,4 @@ xml_string = """
 class MultiSegmentModel:
     
     def __init__(self):
-        self.spec = mujoco.MjSpec.from_string(xml_string)
+        self.spec = mujoco.MjSpec.from_string(multisegment_xml)
