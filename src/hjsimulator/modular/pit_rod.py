@@ -29,7 +29,7 @@ def set_rod_initial_conditions(model, data, hv, vv, d, a, b, avm, g, avn):
 
     data.qpos[0:3] = [-1, d + half_projection_length * np.cos(np.deg2rad(90 - yz_angle)), rod_half_length*np.sin(angle_to_ground_rad) + 0.1]
     data.qpos[3:7] = quaternion
-    data.qvel[0:3] = [hv*np.cos(np.deg2rad(a)), -hv*np.sin(np.deg2rad(a)), vv]
+    data.qvel[0:3] = [hv*np.cos(np.deg2rad(a)), hv*np.sin(np.deg2rad(a)), vv]
     data.qvel[3:6] = omega
     
     mujoco.mj_forward(model, data)

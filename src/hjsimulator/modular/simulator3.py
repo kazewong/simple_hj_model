@@ -20,11 +20,11 @@ class Simulator:
         if module == 'rod':
             self.model = mujoco.MjModel.from_xml_string(pit_rod_xml)
             self.data = mujoco.MjData(self.model)
-            set_rod_initial_conditions(self.model, self.data, 3, -1, 2, 45, 0, 0, -20, 0)
+            set_rod_initial_conditions(self.model, self.data, 3, -1, 2, -60, -30, 0, 0, 0)
         else:
             self.model = mujoco.MjModel.from_xml_string(pit_humanoid_xml)
             self.data = mujoco.MjData(self.model)
-            set_humanoid_initial_conditions(self.model, self.data, 3, -1, 2, 45, 0, 0, -20, 0)
+            set_humanoid_initial_conditions(self.model, self.data, 3, -1, 2, -45, -30, 0, 0, 0)
 
     def key_callback(self, keycode):
         if keycode == 32:
@@ -46,7 +46,7 @@ class Simulator:
 
 
 if __name__ == "__main__":
-    module = 'rod' # as opposed to 'humanoid'
+    module = 'ro' # as opposed to 'humanoid'
     callbacks = []
     simulator = Simulator(module, callbacks, nt = 2000)
 
