@@ -1,7 +1,5 @@
-import mujoco
-
-multisegment_xml = """
-
+pit_humanoid_xml = '''<mujoco model="Pit+Humanoid">
+    <include file='C:\Users\eligi\revamp\src\hjsimulator\modular\pit.xml'/>
   <asset>
     <texture type="skybox" builtin="gradient" rgb1="0.4 0.6 0.8" rgb2="0.1 0.1 0.2" width="512" height="512"/>
     <material name="body_humanoid" rgba="0.8 0.6 0.4 1" specular="0.3" shininess="0.1"/>
@@ -134,9 +132,7 @@ multisegment_xml = """
     <user name="jump_timer" dim="1"/>
     <user name="ground_contact" dim="1"/>
   </sensor>
-"""
+</mujoco>'''
 
-class MultiSegmentModel:
-    
-    def __init__(self):
-        self.spec = mujoco.MjSpec.from_string(multisegment_xml)
+def set_humanoid_initial_conditions(model, data, hv, vv, d, a, b, avm, g, avn):
+    return

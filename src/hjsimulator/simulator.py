@@ -10,30 +10,34 @@ import mujoco
 import mujoco.viewer
 
 
-def track_forces(model, data, step):
+def track_forces(modules, data, step):
     # track forces
     return
 
 class Simulator:
     
-    def __init__(self, models: list, callbacks: list = [], nt: int = 1000):
+    def __init__(self, modules: list, callbacks: list = [], nt: int = 1000):
         
-        self.models = models
+        self.modules = modules
         self.callbacks = callbacks
         self.nt = nt
 
         # Initialize the unified XML string
-        unified_xml = ""
+        unified_xml = "<mujoco model='combined'>"
         
-        # Append each model's XML representation
-        if any(isinstance(model, PitModel) for model in models):
-            unified_xml += pit_xml
-        if any(isinstance(model, RodModel) for model in models):
-            unified_xml += rod_xml
-        if any(isinstance(model, MultiSegmentModel) for model in models):
-            unified_xml += multisegment_xml
-        
-        print(unified_xml)
+        # Append each module's XML representation
+        if "pit" in modules:
+            unified_xml += pit_xml.lstrip('<mujoco>').rstrip('</mujoco>')
+        if "rod" in modules:
+            unified_xml += rod_xml.lstrip('<mujoco>').rstrip('</mujoco>')
+        if "humanoid" in modules:
+            unified_xml += multisegment_xml.lstrip('<mujoco>').rstrip('</mujoco>')
+
+        unified_xml += "</mujoco>"
+
+        # print(unified_xml)
+        with open('C:/Users/eligi/revamp/src/hjsimulator/unified_xml.txt', 'w') as file:
+            file.write(unified_xml)
 
         
         # Create the unified MuJoCo model
@@ -53,12 +57,9 @@ class Simulator:
 
 
 if __name__ == "__main__":
-    pit = PitModel()
-    rod = RodModel()
-    humanoid = MultiSegmentModel()
-    models = [pit, rod, humanoid]
+    modules = ['pit', 'rod', 'humanoid']
     callbacks = [track_forces]
-    simulator = Simulator(models, callbacks, nt = 1000)
+    simulator = Simulator(modules, callbacks, nt = 1000)
 
     simulator.simulate(dt = 0.02)
     simulator.visualize()

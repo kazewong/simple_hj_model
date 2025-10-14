@@ -3,7 +3,6 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 rod_xml = """
-<mujoco model="rod">
   <worldbody>
     <!-- Falling cylindrical rod -->
     <body name="rod" pos="2 2 2">
@@ -20,7 +19,6 @@ rod_xml = """
 
   </worldbody>
 
-</mujoco>
 """
 
 
