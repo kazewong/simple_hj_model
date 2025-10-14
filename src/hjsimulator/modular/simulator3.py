@@ -4,6 +4,8 @@ import numpy as np
 import time
 from pit_rod import pit_rod_xml
 from pit_rod import set_rod_initial_conditions
+from pit_humanoid import pit_humanoid_xml
+from pit_humanoid import set_humanoid_initial_conditions
 
 
 class Simulator:
@@ -20,8 +22,9 @@ class Simulator:
             self.data = mujoco.MjData(self.model)
             set_rod_initial_conditions(self.model, self.data, 3, -1, 2, 45, 0, 0, -20, 0)
         else:
-            self.model = mujoco.MjModel.from_xml_path("C:/Users/eligi/revamp/src/hjsimulator/modular/pit_humanoid.xml")
+            self.model = mujoco.MjModel.from_xml_string(pit_humanoid_xml)
             self.data = mujoco.MjData(self.model)
+            set_humanoid_initial_conditions(self.model, self.data, 3, -1, 2, 45, 0, 0, -20, 0)
 
     def key_callback(self, keycode):
         if keycode == 32:
