@@ -8,6 +8,9 @@ from pit_humanoid import pit_humanoid_xml
 from pit_humanoid import set_humanoid_initial_conditions
 
 
+
+
+
 class Simulator:
     
     def __init__(self, module: str, callbacks: list = [], nt: int = 1000, params: list = None):
@@ -46,15 +49,11 @@ class Simulator:
                 viewer.sync()
                 time.sleep(0.01)
 
-    
-
-
-
 
 if __name__ == "__main__":
-    module = 'rod' # as opposed to 'humanoid'
+    module = 'humanoid' # rod/humanoid
     callbacks = []
-    simulator = Simulator(module, callbacks, nt = 2000, params = [3, -1, 2, -45, -35, 0, 0, 0])
+    simulator = Simulator(module, callbacks, nt = 2000, params = [3, -2, 3, -50, 0, 2, 0, 0])
 
     # simulator.simulate()
     simulator.visualize()

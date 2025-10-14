@@ -1,5 +1,6 @@
 import mujoco
 import numpy as np
+from coordinate_transform import mn_rotation_to_quaternion
 
 pit_humanoid_xml = '''<mujoco model="Pit+Humanoid">
     <include file='C:/Users/eligi/revamp/src/hjsimulator/modular/pit.xml'/>
@@ -17,36 +18,36 @@ pit_humanoid_xml = '''<mujoco model="Pit+Humanoid">
       <freejoint name="torso_free"/>
       
       <!-- Torso - main body capsule -->
-      <geom name="torso" type="capsule" fromto="0 0 -0.15 0 0 0.15" size="0.08" 
+      <geom name="torso" type="capsule" fromto="0 0 -0.3 0 0 0.3" size="0.16" 
             material="body_humanoid" mass="15"/>
       
       <!-- Visual sites for debugging -->
-      <site name="torso_center" pos="0 0 0" size="0.02" rgba="0 0 1 0.5"/>
-      <site name="com_marker" pos="0 0 0" size="0.03" rgba="1 1 0 0.7"/>
+      <site name="torso_center" pos="0 0 0" size="0.04" rgba="0 0 1 0.5"/>
+      <site name="com_marker" pos="0 0 0" size="0.06" rgba="1 1 0 0.7"/>
       
       <!-- Thigh -->
-      <body name="thigh" pos="0 0 -0.2">
+      <body name="thigh" pos="0 0 -0.4">
         <joint name="hip" type="hinge" axis="0 1 0" range="-1.2 2.0" 
                stiffness="10" armature="0.01" damping="2.0"/>
-        <geom name="thigh" type="capsule" fromto="0 0 0 0 0 -0.35" size="0.045" 
+        <geom name="thigh" type="capsule" fromto="0 0 0 0 0 -0.7" size="0.09" 
               material="body_humanoid" mass="4"/>
-        <site name="hip_marker" pos="0 0 0" size="0.015" rgba="1 0 0 0.8"/>
+        <site name="hip_marker" pos="0 0 0" size="0.03" rgba="1 0 0 0.8"/>
         
         <!-- Shin -->
-        <body name="shin" pos="0 0 -0.35">
+        <body name="shin" pos="0 0 -0.7">
           <joint name="knee" type="hinge" axis="0 1 0" range="-0.2 2.2" 
                  stiffness="8" armature="0.01" damping="1.8"/>
-          <geom name="shin" type="capsule" fromto="0 0 0 0 0 -0.35" size="0.035" 
+          <geom name="shin" type="capsule" fromto="0 0 0 0 0 -0.7" size="0.07" 
                 material="body_humanoid" mass="2"/>
-          <site name="knee_marker" pos="0 0 0" size="0.015" rgba="0 1 0 0.8"/>
+          <site name="knee_marker" pos="0 0 0" size="0.03" rgba="0 1 0 0.8"/>
           
           <!-- Foot -->
-          <body name="foot_humanoid" pos="0 0 -0.35">
+          <body name="foot_humanoid" pos="0 0 -0.7">
             <joint name="ankle" type="hinge" axis="0 1 0" range="-1.0 1.0" 
                    stiffness="5" armature="0.01" damping="1.2"/>
             
             <!-- Main foot body -->
-            <geom name="foot_main" type="box" size="0.12 0.05 0.03" pos="0.05 0 -0.03" 
+            <geom name="foot_main" type="box" size="0.24 0.1 0.06" pos="0.1 0 -0.06" 
                   material="foot" mass="0.8" friction="5 0.1 0.05"/>
 
           </body>
@@ -93,59 +94,6 @@ pit_humanoid_xml = '''<mujoco model="Pit+Humanoid">
 import mujoco
 import numpy as np
 
-def set_humanoid_initial_conditions(model, data, params):
-    hv = params[0]
-    vv = params[1]
-    d = params[2]
-    a = params[3]
-    b = params[4]
-    avm = params[5]
-    g = params[6]
-    avn = params[7]
-    """
-    Set initial conditions for humanoid - same orientation in space,
-    but rotated around its own long axis to face movement direction
-    """
-    
-    # Get the base quaternion from your existing rotation logic
-    quaternion, omega, yz_angle, yz_projection_factor, angle_to_ground_rad = mn_rotation_to_quaternion(a, b, g, avm, avn)
-    
-    # Create rotation around the humanoid's own long axis
-    long_axis_rotation_angle = np.deg2rad(a)  # or whatever angle you want
-    local_z_rotation = np.array([np.cos(long_axis_rotation_angle/2), 0, 0, np.sin(long_axis_rotation_angle/2)])
-    
-    # Apply the long-axis rotation AFTER the spatial orientation
-    final_quat = quaternion_multiply(quaternion, local_z_rotation)
-    
-    # Set torso position (freejoint position - first 3 qpos elements)
-    data.qpos[0] = -1  # x position
-    data.qpos[1] = d   # y position (distance parameter)
-    data.qpos[2] = 1.2 # z position (humanoid standing height)
-    
-    # Set torso orientation (freejoint quaternion - next 4 qpos elements)
-    data.qpos[3:7] = final_quat  # [w, x, y, z]
-    
-    # Set joint angles (elements 7, 8, 9 - default crouch position)
-    data.qpos[7] = np.deg2rad(-0.8)   # hip angle
-    data.qpos[8] = np.deg2rad(1.6)    # knee angle  
-    data.qpos[9] = np.deg2rad(-0.4)   # ankle angle
-    
-    # Set torso linear velocities (freejoint linear velocity - first 3 qvel elements)
-    data.qvel[0] = hv * np.cos(np.deg2rad(a))  # x velocity component
-    data.qvel[1] = hv * np.sin(np.deg2rad(a))  # y velocity component
-    data.qvel[2] = vv                          # z velocity (vertical)
-    
-    # Set torso angular velocities (freejoint angular velocity - next 3 qvel elements)
-    data.qvel[3:6] = omega  # [omega_x, omega_y, omega_z]
-    
-    # Set joint velocities (elements 6, 7, 8 - start with zero)
-    data.qvel[6] = 0  # hip angular velocity
-    data.qvel[7] = 0  # knee angular velocity
-    data.qvel[8] = 0  # ankle angular velocity
-    
-    # Update simulation state
-    mujoco.mj_forward(model, data)
-
 def quaternion_multiply(q1, q2):
     """Multiply quaternions q1 * q2, both in [w, x, y, z] format"""
     w1, x1, y1, z1 = q1
@@ -158,83 +106,63 @@ def quaternion_multiply(q1, q2):
     
     return np.array([w, x, y, z])
 
-def mn_rotation_to_quaternion(alpha_deg, beta_deg, gamma_deg, omega_m, omega_n):
+def rotate_quaternion_z(quaternion, angle_degrees):
+    """
+    Rotate a quaternion by angle_degrees around the Z-axis (clockwise when looking down)
+    """
+    angle_rad = np.deg2rad(-angle_degrees)  # Negative for clockwise
+    
+    # Create Z-axis rotation quaternion [w, x, y, z]
+    z_rotation = np.array([
+        np.cos(angle_rad/2),  # w
+        0,                    # x
+        0,                    # y
+        np.sin(angle_rad/2)   # z
+    ])
+    
+    # Apply Z rotation after the existing rotation
+    return quaternion_multiply(quaternion, z_rotation)
 
-    alpha = np.radians(alpha_deg)
-    beta = np.radians(beta_deg)
-    gamma = np.radians(gamma_deg)
+def set_humanoid_initial_conditions(model, data, params):
+    hv = params[0]
+    vv = params[1]
+    d = params[2]
+    a = params[3]
+    b = params[4]
+    avm = params[5]
+    g = params[6]
+    avn = params[7]
     
-    n_axis = np.array([np.cos(alpha), np.sin(alpha), 0])
+    # Get the base quaternion from your existing rotation logic
+    quaternion, omega, yz_angle, yz_projection_factor, angle_to_ground_rad = mn_rotation_to_quaternion(a, b, g, avm, avn)
     
-    m_axis = np.array([-np.sin(alpha), np.cos(alpha), 0])
+    # Try removing this extra rotation first to see if that's the issue
+    # Create rotation around the humanoid's own long axis
+    # long_axis_rotation_angle = np.deg2rad(a)  # COMMENT THIS OUT
+    # local_z_rotation = np.array([np.cos(long_axis_rotation_angle/2), 0, 0, np.sin(long_axis_rotation_angle/2)])
     
-    def axis_angle_to_quat(axis, angle):
-        axis = axis / np.linalg.norm(axis)
-        half_angle = angle / 2
-        w = np.cos(half_angle)
-        xyz = axis * np.sin(half_angle)
-        return np.array([w, xyz[0], xyz[1], xyz[2]])
+    # Apply the long-axis rotation AFTER the spatial orientation
+    # final_quat = quaternion_multiply(quaternion, local_z_rotation)  # COMMENT THIS OUT
+    final_quat = quaternion  # USE THIS INSTEAD
     
-    def axis_angle_to_rotation_matrix(axis, angle):
-        axis = axis / np.linalg.norm(axis)
-        cos_a = np.cos(angle)
-        sin_a = np.sin(angle)
-        x, y, z = axis
-        return np.array([
-            [cos_a + x*x*(1-cos_a), x*y*(1-cos_a) - z*sin_a, x*z*(1-cos_a) + y*sin_a],
-            [y*x*(1-cos_a) + z*sin_a, cos_a + y*y*(1-cos_a), y*z*(1-cos_a) - x*sin_a],
-            [z*x*(1-cos_a) - y*sin_a, z*y*(1-cos_a) + x*sin_a, cos_a + z*z*(1-cos_a)]
-        ])
+    # Rest of your code stays the same...
+    data.qpos[0] = -1
+    data.qpos[1] = d
+    data.qpos[2] = 2.4
+    data.qpos[3:7] = final_quat
     
-    R_m = axis_angle_to_rotation_matrix(m_axis, beta)
-    R_n = axis_angle_to_rotation_matrix(n_axis, gamma)
+    data.qpos[7] = np.deg2rad(-0.8)
+    data.qpos[8] = np.deg2rad(1.6)
+    data.qpos[9] = np.deg2rad(-0.4)
     
-    R_combined = R_n @ R_m
+    data.qvel[0] = hv * np.cos(np.deg2rad(a))
+    data.qvel[1] = hv * np.sin(np.deg2rad(a))
+    data.qvel[2] = vv
     
-    local_rod_axis = np.array([0, 0, 1])
+    data.qvel[3:6] = omega
     
-    world_rod_axis = R_combined @ local_rod_axis
+    data.qvel[6] = 0
+    data.qvel[7] = 0
+    data.qvel[8] = 0
     
-    yz_angle_rad = np.arctan2(world_rod_axis[1], world_rod_axis[2])
-    yz_angle_deg = np.degrees(yz_angle_rad)
-
-    yz_components = np.array([world_rod_axis[1], world_rod_axis[2]])
-    yz_projection_factor = np.linalg.norm(yz_components)
-
-    angle_to_ground_rad = np.arcsin(abs(world_rod_axis[2]))
-    
-    def rotation_matrix_to_quat(R):
-        """Convert rotation matrix to quaternion"""
-        trace = np.trace(R)
-        if trace > 0:
-            s = np.sqrt(trace + 1.0) * 2
-            w = 0.25 * s
-            x = (R[2,1] - R[1,2]) / s
-            y = (R[0,2] - R[2,0]) / s
-            z = (R[1,0] - R[0,1]) / s
-        else:
-            if R[0,0] > R[1,1] and R[0,0] > R[2,2]:
-                s = np.sqrt(1.0 + R[0,0] - R[1,1] - R[2,2]) * 2
-                w = (R[2,1] - R[1,2]) / s
-                x = 0.25 * s
-                y = (R[0,1] + R[1,0]) / s
-                z = (R[0,2] + R[2,0]) / s
-            elif R[1,1] > R[2,2]:
-                s = np.sqrt(1.0 + R[1,1] - R[0,0] - R[2,2]) * 2
-                w = (R[0,2] - R[2,0]) / s
-                x = (R[0,1] + R[1,0]) / s
-                y = 0.25 * s
-                z = (R[1,2] + R[2,1]) / s
-            else:
-                s = np.sqrt(1.0 + R[2,2] - R[0,0] - R[1,1]) * 2
-                w = (R[1,0] - R[0,1]) / s
-                x = (R[0,2] + R[2,0]) / s
-                y = (R[1,2] + R[2,1]) / s
-                z = 0.25 * s
-        return np.array([w, x, y, z])
-    
-    final_quat = rotation_matrix_to_quat(R_combined)
-    
-    omega_world = omega_m * m_axis + omega_n * n_axis
-    
-    return final_quat, omega_world, yz_angle_deg, yz_projection_factor, angle_to_ground_rad
+    mujoco.mj_forward(model, data)
