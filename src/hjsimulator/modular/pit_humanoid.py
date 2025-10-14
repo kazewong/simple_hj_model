@@ -93,7 +93,15 @@ pit_humanoid_xml = '''<mujoco model="Pit+Humanoid">
 import mujoco
 import numpy as np
 
-def set_humanoid_initial_conditions(model, data, hv, vv, d, a, b, avm, g, avn):
+def set_humanoid_initial_conditions(model, data, params):
+    hv = params[0]
+    vv = params[1]
+    d = params[2]
+    a = params[3]
+    b = params[4]
+    avm = params[5]
+    g = params[6]
+    avn = params[7]
     """
     Set initial conditions for humanoid - same orientation in space,
     but rotated around its own long axis to face movement direction

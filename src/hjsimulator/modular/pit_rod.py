@@ -22,7 +22,16 @@ pit_rod_xml = f'''<mujoco model="PitRod">
   </worldbody>
 </mujoco>'''
 
-def set_rod_initial_conditions(model, data, hv, vv, d, a, b, avm, g, avn):
+def set_rod_initial_conditions(model, data, params):
+
+    hv = params[0]
+    vv = params[1]
+    d = params[2]
+    a = params[3]
+    b = params[4]
+    avm = params[5]
+    g = params[6]
+    avn = params[7]
     
     quaternion, omega, yz_angle, yz_projection_factor, angle_to_ground_rad = mn_rotation_to_quaternion(a, b, g, avm, avn)
     half_projection_length = rod_half_length * yz_projection_factor

@@ -10,7 +10,7 @@ from pit_humanoid import set_humanoid_initial_conditions
 
 class Simulator:
     
-    def __init__(self, module: str, callbacks: list = [], nt: int = 1000):
+    def __init__(self, module: str, callbacks: list = [], nt: int = 1000, params: list = None):
         
         self.module = module
         self.callbacks = callbacks
@@ -20,11 +20,13 @@ class Simulator:
         if module == 'rod':
             self.model = mujoco.MjModel.from_xml_string(pit_rod_xml)
             self.data = mujoco.MjData(self.model)
-            set_rod_initial_conditions(self.model, self.data, 3, -1, 2, -60, -30, 0, 0, 0)
-        else:
+            set_rod_initial_conditions(self.model, self.data, params)
+        elif module == 'humanoid':
             self.model = mujoco.MjModel.from_xml_string(pit_humanoid_xml)
             self.data = mujoco.MjData(self.model)
-            set_humanoid_initial_conditions(self.model, self.data, 3, -1, 2, -45, -30, 0, 0, 0)
+            set_humanoid_initial_conditions(self.model, self.data, params)
+        else:
+            print("Error: Module not found")
 
     def key_callback(self, keycode):
         if keycode == 32:
@@ -44,11 +46,15 @@ class Simulator:
                 viewer.sync()
                 time.sleep(0.01)
 
+    
+
+
+
 
 if __name__ == "__main__":
-    module = 'ro' # as opposed to 'humanoid'
+    module = 'rod' # as opposed to 'humanoid'
     callbacks = []
-    simulator = Simulator(module, callbacks, nt = 2000)
+    simulator = Simulator(module, callbacks, nt = 2000, params = [3, -1, 2, -45, -35, 0, 0, 0])
 
     # simulator.simulate()
     simulator.visualize()
