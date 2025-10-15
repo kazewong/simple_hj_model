@@ -22,3 +22,4 @@ Step 1960: Contact force = 537.27
 Step 1970: Contact force = 407.45
 Step 1980: Contact force = 252.94
 Step 1990: Contact force = 160.75
+Collision ended at step 307

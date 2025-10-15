@@ -10,22 +10,38 @@ from pit_humanoid import set_humanoid_initial_conditions
 collision_finished = False
 
 # callback method
-def track_forces(model, data, step):
+def track_collision_forces(model, data, step):
     global collision_finished
-
+    
     if collision_finished:
         return
     
-    elif data.ncon > 0:  # if there are contacts
-        force = np.zeros(6)
-        mujoco.mj_contactForce(model, data, 0, force)  # get first contact force
+    elif data.ncon > 0:  # During contact/collision
+        # Contact force
+        contact_force = np.zeros(6)
+        mujoco.mj_contactForce(model, data, 0, contact_force)
+        contact_magnitude = np.linalg.norm(contact_force[:3])
+        
+        # joint constraint forces (hip=6, knee=7, ankle=8 after freejoint's 6 DOF)
+        joint_forces = data.qfrc_constraint
+        hip_force = abs(joint_forces[6]) if len(joint_forces) > 6 else 0
+        knee_force = abs(joint_forces[7]) if len(joint_forces) > 7 else 0
+        ankle_force = abs(joint_forces[8]) if len(joint_forces) > 8 else 0
+        
         with open("C:/Users/eligi/revamp/src/hjsimulator/modular/forces.txt", "a") as f:
-            f.write(f"Step {step}: Contact force = {np.linalg.norm(force[:3]):.2f}\n")
-
+            f.write(f"Step {step}: Contact={contact_magnitude:.2f}, Hip={hip_force:.2f}, Knee={knee_force:.2f}, Ankle={ankle_force:.2f}\n")
+    
     elif data.ncon == 0:
         with open("C:/Users/eligi/revamp/src/hjsimulator/modular/forces.txt", "r") as f:
-            if f.read().strip():  # file has content, so contact happened
-                collision_finished = True
+            content = f.read().strip()
+        if content:
+            collision_finished = True
+            with open("C:/Users/eligi/revamp/src/hjsimulator/modular/forces.txt", "a") as f:
+                f.write(f"Collision ended at step {step}\n")
+
+
+
+
 
 
 class Simulator:
@@ -36,6 +52,8 @@ class Simulator:
         self.callbacks = callbacks
         self.nt = nt
         self.paused = True
+        open("C:/Users/eligi/revamp/src/hjsimulator/modular/forces.txt", "w").close()
+
 
         # module options
         if module == 'rod':
@@ -71,7 +89,7 @@ class Simulator:
 
 if __name__ == "__main__":
     module = 'humanoid' # rod/humanoid
-    callbacks = [track_forces]
+    callbacks = [track_collision_forces]
     simulator = Simulator(module, callbacks, nt = 2000, params = [10, -5, 2, 45, -30, 7, 0, 0])  # (hv, vv, d, a, b, avm, g, avn)
 
     # simulator.simulate()

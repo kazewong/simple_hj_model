@@ -1,10 +1,11 @@
-Step 332: Contact force = 4961.19
-Step 333: Contact force = 6059.21
-Step 334: Contact force = 3817.63
-Step 335: Contact force = 2244.95
-Step 336: Contact force = 1712.97
-Step 337: Contact force = 1666.35
-Step 338: Contact force = 8925.48
-Step 339: Contact force = 10747.63
-Step 340: Contact force = 6985.18
-Step 341: Contact force = 963.35
+Step 271: Contact=4961.19, Hip=7850.25, Knee=3714.75, Ankle=418.91
+Step 272: Contact=6059.21, Hip=6021.55, Knee=2570.09, Ankle=1077.05
+Step 273: Contact=3817.63, Hip=437.68, Knee=183.45, Ankle=1110.21
+Step 274: Contact=2244.95, Hip=1302.72, Knee=932.36, Ankle=784.98
+Step 275: Contact=1712.97, Hip=355.05, Knee=389.78, Ankle=586.85
+Step 276: Contact=1666.35, Hip=93.33, Knee=164.33, Ankle=562.98
+Step 277: Contact=8925.48, Hip=4490.96, Knee=1214.55, Ankle=572.55
+Step 278: Contact=10747.63, Hip=2376.46, Knee=1837.87, Ankle=362.11
+Step 279: Contact=6985.18, Hip=1887.54, Knee=1252.26, Ankle=185.76
+Step 280: Contact=963.35, Hip=206.69, Knee=46.08, Ankle=235.91
+Collision ended at step 281
