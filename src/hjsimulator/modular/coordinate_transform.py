@@ -1,5 +1,6 @@
 import numpy as np
 
+# black box methods below, uncleaned code
 def mn_rotation_to_quaternion(alpha_deg, beta_deg, gamma_deg, omega_m, omega_n):
 
     alpha = np.radians(alpha_deg)
@@ -40,7 +41,6 @@ def mn_rotation_to_quaternion(alpha_deg, beta_deg, gamma_deg, omega_m, omega_n):
     angle_to_ground_rad = np.arcsin(abs(world_rod_axis[2]))
     
     def rotation_matrix_to_quat(R):
-        """Convert rotation matrix to quaternion"""
         trace = np.trace(R)
         if trace > 0:
             s = np.sqrt(trace + 1.0) * 2

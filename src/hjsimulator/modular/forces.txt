@@ -1,0 +1,10 @@
+Step 332: Contact force = 4961.19
+Step 333: Contact force = 6059.21
+Step 334: Contact force = 3817.63
+Step 335: Contact force = 2244.95
+Step 336: Contact force = 1712.97
+Step 337: Contact force = 1666.35
+Step 338: Contact force = 8925.48
+Step 339: Contact force = 10747.63
+Step 340: Contact force = 6985.18
+Step 341: Contact force = 963.35

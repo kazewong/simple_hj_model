@@ -102,7 +102,6 @@
   </worldbody>
 
   <asset>
-    <!-- Checkered texture with bigger squares -->
     <texture
             name="checker_texture"
             type="2d"
@@ -113,7 +112,6 @@
             height="512"
         />
 
-    <!-- Material with bigger squares -->
     <material
             name="checkerboard"
             texture="checker_texture"

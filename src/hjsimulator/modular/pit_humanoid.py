@@ -2,6 +2,7 @@ import mujoco
 import numpy as np
 from coordinate_transform import mn_rotation_to_quaternion
 
+rod_half_length = 2     # hardcoded
 pit_humanoid_xml = '''<mujoco model="Pit+Humanoid">
     <include file='C:/Users/eligi/revamp/src/hjsimulator/modular/pit.xml'/>
   <asset>
@@ -94,6 +95,7 @@ pit_humanoid_xml = '''<mujoco model="Pit+Humanoid">
 import mujoco
 import numpy as np
 
+# black box methods below, uncleaned code
 def quaternion_multiply(q1, q2):
     """Multiply quaternions q1 * q2, both in [w, x, y, z] format"""
     w1, x1, y1, z1 = q1
@@ -112,16 +114,28 @@ def rotate_quaternion_z(quaternion, angle_degrees):
     """
     angle_rad = np.deg2rad(-angle_degrees)  # Negative for clockwise
     
-    # Create Z-axis rotation quaternion [w, x, y, z]
     z_rotation = np.array([
-        np.cos(angle_rad/2),  # w
-        0,                    # x
-        0,                    # y
-        np.sin(angle_rad/2)   # z
+        np.cos(angle_rad/2),
+        0,
+        0,
+        np.sin(angle_rad/2)
     ])
     
-    # Apply Z rotation after the existing rotation
     return quaternion_multiply(quaternion, z_rotation)
+
+def rotate_vector_z(vector, angle_degrees):
+    """Rotate a 3D vector around the Z-axis"""
+    angle_rad = np.deg2rad(-angle_degrees)  # Negative for clockwise
+    cos_a = np.cos(angle_rad)
+    sin_a = np.sin(angle_rad)
+    
+    rotation_matrix = np.array([
+        [cos_a, -sin_a, 0],
+        [sin_a,  cos_a, 0],
+        [0,      0,     1]
+    ])
+    
+    return rotation_matrix @ vector
 
 def set_humanoid_initial_conditions(model, data, params):
     hv = params[0]
@@ -133,36 +147,18 @@ def set_humanoid_initial_conditions(model, data, params):
     g = params[6]
     avn = params[7]
     
-    # Get the base quaternion from your existing rotation logic
-    quaternion, omega, yz_angle, yz_projection_factor, angle_to_ground_rad = mn_rotation_to_quaternion(a, b, g, avm, avn)
+    identity_quat = np.array([1, 0, 0, 0])
+    z_rotated_quat = rotate_quaternion_z(identity_quat, a)
     
-    # Try removing this extra rotation first to see if that's the issue
-    # Create rotation around the humanoid's own long axis
-    # long_axis_rotation_angle = np.deg2rad(a)  # COMMENT THIS OUT
-    # local_z_rotation = np.array([np.cos(long_axis_rotation_angle/2), 0, 0, np.sin(long_axis_rotation_angle/2)])
+    quaternion, omega, yz_angle, yz_projection_factor, angle_to_ground_rad = mn_rotation_to_quaternion(0, b, g, avm, avn)
     
-    # Apply the long-axis rotation AFTER the spatial orientation
-    # final_quat = quaternion_multiply(quaternion, local_z_rotation)  # COMMENT THIS OUT
-    final_quat = quaternion  # USE THIS INSTEAD
+    final_quaternion = quaternion_multiply(z_rotated_quat, quaternion)
     
-    # Rest of your code stays the same...
-    data.qpos[0] = -1
-    data.qpos[1] = d
-    data.qpos[2] = 2.4
-    data.qpos[3:7] = final_quat
-    
-    data.qpos[7] = np.deg2rad(-0.8)
-    data.qpos[8] = np.deg2rad(1.6)
-    data.qpos[9] = np.deg2rad(-0.4)
-    
-    data.qvel[0] = hv * np.cos(np.deg2rad(a))
-    data.qvel[1] = hv * np.sin(np.deg2rad(a))
-    data.qvel[2] = vv
-    
+    half_projection_length = rod_half_length * yz_projection_factor    
+
+    data.qpos[0:3] = [-1, d + half_projection_length * np.cos(np.deg2rad(90 - yz_angle)), rod_half_length*np.sin(angle_to_ground_rad) + 0.1]
+    data.qpos[3:7] = final_quaternion
+    data.qvel[0:3] = [hv*np.cos(np.deg2rad(-a)), hv*np.sin(np.deg2rad(-a)), vv]
     data.qvel[3:6] = omega
-    
-    data.qvel[6] = 0
-    data.qvel[7] = 0
-    data.qvel[8] = 0
     
     mujoco.mj_forward(model, data)
